@@ -1,0 +1,51 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+import matplotlib
+import matplotlib.pyplot as plt
+
+matplotlib.rcParams.update({'font.size':15})
+
+nz,oz,dz=from_header("hfile","n1","o1","d1")
+na,oa,da=from_header("hfile","n2","o2","d2")
+nx,ox,dx=from_header("hfile","n3","o3","d3")
+
+a=read("hfile",(nx,na,nz))
+xloc=get_array('xloc')
+titles=get_sarray('title')
+n=len(xloc)
+figwidth=get_param("figwidth")
+figheight=get_param("figheight")
+
+temp=searchArgv('maxval')
+if temp==False: 
+    maxval=np.max(a) 
+else:
+    maxval=float(temp)
+
+temp=searchArgv('minval')
+if temp==False: 
+    minval=np.min(a) 
+else:
+    minval=float(temp)
+
+
+f,ax=plt.subplots(1,n,sharey=True,figsize=(figwidth*n,figheight))
+f.text(0.5,0.025,'Angle',ha='center')
+
+ylabel=searchArgv('ylabel')
+ax[0].set_ylabel(ylabel)
+
+for i in range(n):
+    ix=int((xloc[i]-ox)/dx)
+    if ix<nx:
+        ax[i].imshow(np.transpose(a[ix,:,:]),interpolation='none',aspect='auto',extent=[oa,oa+(na-1)*da,oz+(nz-1)*dz,oz],vmin=minval,vmax=maxval,cmap='gray')
+        ax[i].set_title(titles[i])
+
+temp=searchArgv('out')
+if temp==False: 
+    plt.show()
+else:
+    plt.savefig(temp,bbox_inches='tight')
+

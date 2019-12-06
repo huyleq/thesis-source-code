@@ -1,0 +1,15 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+
+filename=searchArgv('hfile') 
+
+n1,o1,d1=from_header('hfile','n1','o1','d1')
+n2,o2,d2=from_header('hfile','n2','o2','d2')
+n1=int(n1)
+n2=int(n2)
+
+a=read('hfile',(n2,n1))
+
+print "max ",np.amax(a)," min ",np.amin(a)

@@ -1,0 +1,32 @@
+#!/usr/bin/env python
+
+import math
+import numpy as np
+from seppyio import *
+import matplotlib
+#matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
+n1,o1,d1=from_header('final','n1','o1','d1')
+n2,o2,d2=from_header('final','n2','o2','d2')
+n3=from_header('final','n3')
+
+final=read('final',(n3,n2,n1))
+true=read('true',(n2,n1))
+
+modelres=np.zeros((n3,1))
+for i in range(n3):
+    final_true=(final[i,:,:]-true)/true
+    modelres[i]=math.sqrt(np.sum(final_true*final_true))
+modelres=modelres/modelres[0]
+plt.plot(modelres)
+write('modelres',modelres)
+#plt.xlim((0.01,1))
+#plt.ylim((0,1200))
+#plt.xlabel('')
+#plt.ylabel('Count')
+title=searchArgv('title')
+plt.title(title)
+#plt.show()
+#figname=searchArgv("figname")
+#plt.savefig(figname,bbox_inches='tight')

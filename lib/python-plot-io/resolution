@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+
+import math
+from seppyio import *
+
+maxoff,targetdepth=get_param("maxoff","targetdepth")
+domfreq,avevel=get_param("domfreq","avevel")
+halftheta=math.atan(maxoff/2/targetdepth)
+kz=2*domfreq/avevel*math.cos(halftheta)
+print "resolution is",1./kz
+

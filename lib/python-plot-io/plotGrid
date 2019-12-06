@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import ImageGrid
+
+if searchArgv('o1')==False:
+    n1,o1,d1=from_header('hfile','n1','o1','d1')
+    n2,o2,d2=from_header('hfile','n2','o2','d2')
+else:
+    o1,d1=get_param('o1','d1')
+    n1,n2=from_header('hfile','n1','n2')
+    o2,d2=get_param('o2','d2')
+
+n3=from_header('hfile','n3')
+
+a=read("hfile",(n3,n2,n1))
+
+temp=searchArgv('aspect')
+if temp==False:
+    ar='auto'
+else:
+    ar=float(temp)
+
+temp=searchArgv('colormap')
+if temp==False: 
+    colormap='gray' 
+else:
+    colormap=temp
+
+nrow,ncol=get_param("nrow","ncol")
+fs=get_array("figsize")
+if fs==False:
+    fs=(20,10)
+
+scalefactor=get_array('scalefactor')
+if scalefactor==False:
+    scalefactor=[1,1,1]
+
+minval=get_array("minval")
+if minval==False:
+    minval=[]
+    for row in range(nrow):
+        temp=np.zeros((ncol,1))
+        for col in range(ncol):
+            i3=row+col*nrow
+            temp[col]=np.amin(a[i3,:,:])
+        minval.append(np.amin(temp))
+elif len(minval)==1:
+    temp=minval[0]
+    minval=[]
+    for row in range(nrow):
+        minval.append(temp)
+
+maxval=get_array("maxval")
+if maxval==False:
+    maxval=[]
+    for row in range(nrow):
+        temp=np.zeros((ncol,1))
+        for col in range(ncol):
+            i3=row+col*nrow
+            temp[col]=np.amax(a[i3,:,:])
+        maxval.append(np.amax(temp))
+elif len(maxval)==1:
+    temp=maxval[0]
+    maxval=[]
+    for row in range(nrow):
+        maxval.append(temp)
+
+hpad,vpad,cbarpad=get_param("horizontalpad","verticalpad","cbarpad")
+if hpad==False: 
+    hpad=0
+if vpad==False:
+    vpad=0
+if cbarpad==False:
+    cbarpad=0
+
+temp=get_param('fontsize')
+if temp==False:
+    sz=15
+matplotlib.rcParams.update({'font.size':sz})
+
+fig=plt.figure(figsize=fs)
+
+colorbar=searchArgv('colorbar')
+if colorbar=='y':
+    barloc=searchArgv('barloc')
+    if barloc==False:
+        barloc='right'
+    barmode=searchArgv('barmode')
+    if barmode==False:
+        barmode='edge'
+    barsize=searchArgv('barsize')
+    if barsize==False:
+        barsize='7%'
+    grid=ImageGrid(fig,111,nrows_ncols=(nrow,ncol),axes_pad=[hpad,vpad],share_all=True,cbar_location=barloc,cbar_mode=barmode,cbar_size=barsize,cbar_pad=cbarpad)
+else:
+    grid=ImageGrid(fig,111,nrows_ncols=(nrow,ncol),axes_pad=[hpad,vpad],share_all=True)
+
+plt.subplots_adjust(wspace=0,hspace=0)
+
+xlabel=searchArgv('xlabel')
+if xlabel==False: 
+    xlabel=''
+
+ylabel=searchArgv('ylabel')
+if ylabel==False: 
+    ylabel=''
+
+title=get_sarray('title')
+if title==False:
+    title=[]
+    for i in range(nrow*ncol):
+        title.append('')
+
+for i in range(nrow):
+    for j in range(ncol):
+        b=scalefactor[i]*a[j+i*ncol,:,:]
+        ax=grid[j+i*ncol]
+        im = ax.imshow(b,interpolation='none',aspect=ar,extent=[o1,o1+n1*d1,o2+d2*n2,o2],vmin=minval[i],vmax=maxval[i],cmap=colormap)
+        ax.locator_params(axis='x',nbins=4)
+#        if ncol==1:
+#            ax.set_xticklabels([o1,o1+n1*d1/4,o1+n1*d1/2,o1+n1*d1*3/4,o1+n1*d1])
+#        else:
+#            print "here", o1,o1+n1*d1/4,o1+n1*d1/2,o1+n1*d1*3/4
+#            ax.set_xticklabels([o1,o1+n1*d1/4,o1+n1*d1/2,o1+n1*d1*3/4])
+        ax.set_xlabel(xlabel)
+        ax.set_title(title[j+i*ncol])
+    ave=0.5*(minval[i]+maxval[i])
+    if colorbar=='y':
+        ax.cax.colorbar(im,ticks=[minval[i],0.5*(minval[i]+ave),ave,0.5*(ave+maxval[i]),maxval[i]])
+        ax.cax.toggle_label(True)
+    for j in range(ncol-1):
+        grid[j+1+i*ncol].get_yaxis().set_visible(False)
+    grid[i*ncol].set_ylabel(ylabel)
+
+for i in range(nrow-1):
+    for j in range(ncol):
+        grid[j+i*ncol].get_xaxis().set_visible(False)
+
+
+temp=searchArgv('out')
+if temp==False: 
+    plt.show()
+else:
+    plt.savefig(temp,bbox_inches='tight')

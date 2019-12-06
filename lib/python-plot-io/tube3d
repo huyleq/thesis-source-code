@@ -1,0 +1,383 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+import matplotlib
+import matplotlib.pyplot as plt
+
+plt.rcParams['keymap.save']='ctrl+s'
+
+matplotlib.rcParams.update({'font.size':15})
+matplotlib.rcParams.update({'lines.linewidth':0.5})
+
+# hfile is in xyz order
+n1,o1,d1=from_header("hfile","n1","o1","d1")
+n2,o2,d2=from_header("hfile","n2","o2","d2")
+n3,o3,d3=from_header("hfile","n3","o3","d3")
+n4=from_header("hfile","n4")
+if n4==False:
+    n4=1
+
+temp=searchArgv('label1')
+if temp!=False:
+    label1=temp
+else:
+    label1='x1'
+
+temp=searchArgv('label2')
+if temp!=False:
+    label2=temp
+else:
+    label2='x2'
+
+temp=searchArgv('label3')
+if temp!=False:
+    label3=temp
+else:
+    label3='x3'
+
+a=read("hfile",(n4,n3,n2,n1))
+
+temp=searchArgv('maxval')
+if temp==False: 
+    maxval=np.max(a) 
+else:
+    maxval=float(temp)
+
+temp=searchArgv('minval')
+if temp==False: 
+    minval=np.min(a) 
+else:
+    minval=float(temp)
+
+temp=get_param('width1')
+if temp!=False:
+    width1=temp
+else:
+    width1=4.
+
+temp=get_param('width2')
+if temp!=False:
+    width2=temp
+else:
+    width2=4.
+
+temp=get_param('width3')
+if temp!=False:
+    width3=temp
+else:
+    width3=4.
+
+temp=searchArgv('colormap')
+if temp==False: 
+    colormap='gray' 
+else:
+    colormap=temp
+
+j1=int(get_param('j1'))
+if j1==False:
+    j1=1
+
+j2=int(get_param('j2'))
+if j2==False:
+    j2=1
+
+j3=int(get_param('j3'))
+if j3==False:
+    j3=1
+
+loc1=get_param('loc1')
+if loc1!=False:
+    i1=int((loc1-o1)/d1)
+else:
+    i1=n1/2
+loc1=i1*d1+o1
+
+loc2=get_param('loc2')
+if loc2!=False:
+    i2=int((loc2-o2)/d2)
+else:
+    i2=n2/2
+loc2=i2*d2+o2
+
+loc3=get_param('loc3')
+if loc3!=False:
+    i3=int((loc3-o3)/d3)
+else:
+    i3=n3/2
+loc3=i3*d3+o3
+
+x1=np.linspace(o1,o1+d1*n1,n1+1)
+x2=np.linspace(o2,o2+d2*n2,n2+1)
+x3=np.linspace(o3,o3+d3*n3,n3+1)
+
+# x = east west
+# y = north south
+# z = up down
+
+curr_pos=0
+
+title=get_sarray('title')
+if title==False:
+    title=[]
+    for i in range(n4):
+        title.append(str(i))
+
+def key_event(e):
+    global i1,loc1,i2,loc2,i3,loc3,ax1,ax2,ax3,ax4,curr_pos
+
+    if e.key=="u" or e.key=="d":
+        if e.key=="u":
+            i3-=j3
+        elif e.key=="d":
+            i3+=j3
+        i3=i3%n3
+        loc3=i3*d3+o3
+        
+        ax[0,0].cla()
+        
+        ax[0,0].imshow(np.flip(a[curr_pos,i3,:,:],0),interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o2,o2+n2*d2],vmin=minval,vmax=maxval,cmap=colormap)
+        ax[0,0].set_ylabel(label2)
+        del ax[0,0].lines[:]
+        ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+        ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+
+        del ax[1,0].lines[:]
+        ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+        ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+        
+        del ax[1,1].lines[:]
+        ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+        ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+        ax1.set_yticks([loc3])
+        ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+        ax2.set_xticks([loc2])
+        ax2.set_xticklabels([str(loc2)])
+        
+    elif e.key=="e" or e.key=="w":
+        if e.key=="w":
+            i1-=j1
+        elif e.key=="e":
+            i1+=j1
+        i1=i1%n1
+        loc1=i1*d1+o1
+        
+        ax[1,1].cla()
+        
+        ax[1,1].imshow(a[curr_pos,:,:,i1],interpolation='none',aspect='auto',extent=[o2,o2+n2*d2,o3+n3*d3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+        ax[1,1].set_xlabel(label2)
+        del ax[1,1].lines[:]
+        ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+        ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+        ax1.set_yticks([loc3])
+        ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+        ax2.set_xticks([loc2])
+        ax2.set_xticklabels([str(loc2)])
+
+        del ax[1,0].lines[:]
+        ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+        ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+        
+        del ax[0,0].lines[:]
+        ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+        ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+        ax3.set_yticks([loc2])
+        ax3.set_yticklabels([str(loc2)],rotation='vertical',va='center')
+        ax4.set_xticks([loc1])
+        ax4.set_xticklabels([str(loc1)])
+        
+    elif e.key=="s" or e.key=="n":
+        if e.key=="s":
+            i2-=j2
+        elif e.key=="n":
+            i2+=j2
+        i2=i2%n2
+        loc2=i2*d2+o2
+        
+        ax[1,0].cla()
+        
+        ax[1,0].imshow(a[curr_pos,:,i2,:],interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o3+d3*n3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+        del ax[1,1].lines[:]
+        ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+        ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+        ax[1,0].set_xlabel(label1)
+        ax[1,0].set_ylabel(label3)
+
+        del ax[1,1].lines[:]
+        ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+        ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+        ax1.set_yticks([loc3])
+        ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+        ax2.set_xticks([loc2])
+        ax2.set_xticklabels([str(loc2)])
+        
+        del ax[0,0].lines[:]
+        ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+        ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+        ax3.set_yticks([loc2])
+        ax3.set_yticklabels([str(loc2)],rotation='vertical',va='center')
+        ax4.set_xticks([loc1])
+        ax4.set_xticklabels([str(loc1)])
+
+    elif e.key=="left" or e.key=="right" or e.key.isdigit():
+        if e.key=="left":
+            curr_pos-=1
+        if e.key=="right":
+            curr_pos+=1
+        if e.key.isdigit():
+            curr_pos=int(e.key)
+        curr_pos=curr_pos%n4
+
+        ax[0,1].cla()
+        ax[0,1].get_xaxis().set_visible(False)
+        ax[0,1].get_yaxis().set_visible(False)
+        ax[0,1].axis('off')
+        ax[0,1].text(0.5,0.5,title[curr_pos],horizontalalignment='center',verticalalignment='center',fontsize=50)
+
+        ax[1,0].cla()
+        ax[1,0].imshow(a[curr_pos,:,i2,:],interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o3+d3*n3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+        ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+        ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+        ax[1,0].set_xlabel(label1)
+        ax[1,0].set_ylabel(label3)
+        
+        # yz plane
+        ax[1,1].cla()
+        ax[1,1].imshow(a[curr_pos,:,:,i1],interpolation='none',aspect='auto',extent=[o2,o2+n2*d2,o3+n3*d3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+        ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+        ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+        ax[1,1].set_xlabel(label2)
+        ax1.set_yticks([loc3])
+        ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+        ax2.set_xticks([loc2])
+        ax2.set_xticklabels([str(loc2)])
+        
+        # xy plane
+        ax[0,0].cla()
+        ax[0,0].imshow(np.flip(a[curr_pos,i3,:,:],0),interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o2,o2+n2*d2],vmin=minval,vmax=maxval,cmap=colormap)
+        ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+        ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+        ax[0,0].set_ylabel(label2)
+        ax3.set_yticks([loc2])
+        ax3.set_yticklabels([str(loc2)],rotation='vertical',va='center')
+        ax4.set_xticks([loc1])
+        ax4.set_xticklabels([str(loc1)])
+        
+    fig.canvas.draw()
+
+def onclick(e):
+    global i1,loc1,i2,loc2,i3,loc3,ax1,ax2,ax3,ax4,curr_pos
+    if e.inaxes==ax1 or e.inaxes==ax2:
+        loc2=e.xdata
+        i2=int((loc2-o2)/d2)
+        loc2=i2*d2+o2
+        loc3=e.ydata
+        i3=int((loc3-o3)/d3)
+        loc3=i3*d3+o3
+    if e.inaxes==ax3 or e.inaxes==ax4:
+        loc1=e.xdata
+        i1=int((loc1-o1)/d1)
+        loc1=i1*d1+o1
+        loc2=e.ydata
+        i2=int((loc2-o2)/d2)
+        loc2=i2*d2+o2
+    if e.inaxes==ax[1,0]:
+        loc1=e.xdata
+        i1=int((loc1-o1)/d1)
+        loc1=i1*d1+o1
+        loc3=e.ydata
+        i3=int((loc3-o3)/d3)
+        loc3=i3*d3+o3
+        
+    ax[1,0].cla()
+    ax[1,0].imshow(a[curr_pos,:,i2,:],interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o3+d3*n3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+    ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+    ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+    ax[1,0].set_xlabel(label1)
+    ax[1,0].set_ylabel(label3)
+    
+    # yz plane
+    ax[1,1].cla()
+    ax[1,1].imshow(a[curr_pos,:,:,i1],interpolation='none',aspect='auto',extent=[o2,o2+n2*d2,o3+n3*d3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+    ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+    ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+    ax[1,1].set_xlabel(label2)
+    ax1.set_yticks([loc3])
+    ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+    ax2.set_xticks([loc2])
+    ax2.set_xticklabels([str(loc2)])
+    
+    # xy plane
+    ax[0,0].cla()
+    ax[0,0].imshow(np.flip(a[curr_pos,i3,:,:],0),interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o2,o2+n2*d2],vmin=minval,vmax=maxval,cmap=colormap)
+    ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+    ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+    ax[0,0].set_ylabel(label2)
+    ax3.set_yticks([loc2])
+    ax3.set_yticklabels([str(loc2)],rotation='vertical',va='center')
+    ax4.set_xticks([loc1])
+    ax4.set_xticklabels([str(loc1)])
+        
+    fig.canvas.draw()
+    
+widths=[width1,width3]
+heights=[width3,width2]
+gs_kw=dict(width_ratios=widths,height_ratios=heights)
+fig,ax=plt.subplots(2,2,figsize=(width1+width3,width2+width3),gridspec_kw=gs_kw)
+plt.subplots_adjust(wspace=0,hspace=0)
+fig.canvas.mpl_connect('key_press_event', key_event)
+fig.canvas.mpl_connect('button_press_event', onclick)
+
+ax[0,1].text(0.5,0.5,title[curr_pos],horizontalalignment='center',verticalalignment='center',fontsize=50)
+
+# xz plane
+ax[1,0].imshow(a[curr_pos,:,i2,:],interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o3+d3*n3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+ax[1,0].set_xlabel(label1)
+ax[1,0].set_ylabel(label3)
+
+# yz plane
+im=ax[1,1].imshow(a[curr_pos,:,:,i1],interpolation='none',aspect='auto',extent=[o2,o2+n2*d2,o3+n3*d3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+ax[1,1].get_yaxis().set_visible(False)
+ax[1,1].set_xlabel(label2)
+ax1=ax[1,1].twinx()
+ax1.set_ylim(ax[1,1].get_ylim())
+ax1.set_yticks([loc3])
+ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+ax2=ax[1,1].twiny()
+ax2.set_xlim(ax[1,1].get_xlim())
+ax2.set_xticks([loc2])
+ax2.set_xticklabels([str(loc2)])
+
+# xy plane
+ax[0,0].imshow(np.flip(a[curr_pos,i3,:,:],0),interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o2,o2+n2*d2],vmin=minval,vmax=maxval,cmap=colormap)
+ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+ax[0,0].set_ylabel(label2)
+ax[0,0].get_xaxis().set_visible(False)
+ax3=ax[0,0].twinx()
+ax3.set_ylim(ax[0,0].get_ylim())
+ax3.set_yticks([loc2])
+ax3.set_yticklabels([str(loc2)],rotation='vertical',va='center')
+ax4=ax[0,0].twiny()
+ax4.set_xlim(ax[0,0].get_xlim())
+ax4.set_xticks([loc1])
+ax4.set_xticklabels([str(loc1)])
+
+ave=0.5*(minval+maxval)
+temp=searchArgv('wantbar')
+if temp=='y':
+    fig.subplots_adjust(right=0.8)
+    cbar_ax=fig.add_axes([0.85, 0.15, 0.05, 0.7])
+    cbar=fig.colorbar(im,cax=cbar_ax,ticks=[minval,0.5*(minval+ave),ave,0.5*(ave+maxval),maxval])
+temp=searchArgv('barlabel')
+if temp!=False:
+    cbar.ax.set_ylabel(temp)
+
+ax[0,1].axis('off')
+plt.show()
+
+

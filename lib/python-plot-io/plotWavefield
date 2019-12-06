@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+import matplotlib
+#matplotlib.use('TkAgg')
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from seppyio import *
+from matplotlib.patches import FancyBboxPatch 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+n1,o1,d1=from_header('wavefield','n1','o1','d1')
+n2,o2,d2=from_header('wavefield','n2','o2','d2')
+nt,ot,dt=from_header('wavefield','n3','o3','d3')
+
+d1=d1*1e-3
+d2=d2*1e-3
+n1=int(n1)
+n2=int(n2)
+nt=int(nt)
+
+wfld=read('wavefield',(nt,n2,n1))
+v=read('v',(n2,n1))
+
+nr1,or1,dr1=from_header('data','n1','o1','d1')
+nt1,ot1,dt1=from_header('data','n2','o2','d2')
+nr1=int(nr1)
+nt1=int(nt1)
+data=read('data',(nt1,nr1))
+
+temp=searchArgv('maxval_wfld')
+if temp==False: 
+    maxval_wfld=np.max(wfld) 
+else:
+    maxval_wfld=float(temp)
+
+temp=searchArgv('minval_wfld')
+if temp==False: 
+    minval_wfld=np.min(wfld) 
+else:
+    minval_wfld=float(temp)
+
+temp=searchArgv('maxval_v')
+if temp==False: 
+    maxval_v=np.max(v) 
+else:
+    maxval_v=float(temp)
+
+temp=searchArgv('minval_v')
+if temp==False: 
+    minval_v=np.min(v) 
+else:
+    minval_v=float(temp)
+
+temp=searchArgv('maxval_d')
+if temp==False: 
+    maxval_d=np.max(data) 
+else:
+    maxval_d=float(temp)
+
+temp=searchArgv('minval_d')
+if temp==False: 
+    minval_d=np.min(data) 
+else:
+    minval_d=float(temp)
+
+gs_kw=dict(width_ratios=[4,1])
+fig,ax=plt.subplots(1,2,figsize=(15,5),gridspec_kw=gs_kw)
+plt.subplots_adjust(wspace=0.15,hspace=0.1)
+
+sz=15
+ax[0].tick_params(labelsize=sz,pad=0.5*sz)
+ax[0].set_xlabel('X (km)',fontsize=sz)
+ax[0].set_ylabel('Z (km)',fontsize=sz)
+ax[1].tick_params(labelsize=sz,pad=0.5*sz)
+ax[1].set_xlabel('Receiver',fontsize=sz)
+ax[1].set_ylabel('T (s)',fontsize=sz)
+
+soux,souz=get_param('soux','souz')
+nrec,orec,drec=get_param('nrec','orec','drec')
+nrec=int(nrec)
+
+#for i in range
+i=int(get_param('i'))
+im=ax[0].imshow(wfld[i,:,:],interpolation='none',aspect="auto",extent=[o1,o1+(n1)*d1,o2+(n2)*d2,o2],cmap='gray',vmin=minval_wfld,vmax=maxval_wfld)
+ax[0].scatter(soux,souz,s=50,c='r')
+ax[0].scatter(np.linspace(orec,orec+drec*(nrec-1),nrec),souz*np.ones((1,nrec)),s=10,c='k')
+ax[0].set_title(str(i*dt)+' s',fontsize=sz)
+ax[0].imshow(v,interpolation='none',alpha=0.2,aspect="auto",extent=[o1,o1+(n1)*d1,o2+(n2)*d2,o2],cmap='jet',vmin=minval_v,vmax=maxval_v)
+t=ot+dt*i
+nt2=int((t-ot1)/dt1+1)
+data2=np.zeros((nt1,nr1))
+data2[0:nt2,:]=data[0:nt2,:]
+ax[1].imshow(data2,interpolation='none',aspect="auto",extent=[or1,or1+(nr1)*dr1,ot1+(nt1)*dt1,ot1],cmap='gray',vmin=minval_d,vmax=maxval_d)
+
+temp=searchArgv('out')
+if temp==False: 
+    plt.show()
+else:
+    plt.savefig(temp,bbox_inches='tight')
+

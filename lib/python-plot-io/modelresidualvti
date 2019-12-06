@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+
+import math
+import numpy as np
+from seppyio import *
+import matplotlib
+#matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
+n1,o1,d1=from_header('final1','n1','o1','d1')
+n2,o2,d2=from_header('final1','n2','o2','d2')
+n3=from_header('final1','n3')
+
+final1=read('final1',(n3,n2,n1))
+true1=read('true1',(n2,n1))
+
+final2=read('final2',(n3,n2,n1))
+true2=read('true2',(n2,n1))
+
+final3=read('final3',(n3,n2,n1))
+true3=read('true3',(n2,n1))
+
+modelres1=np.zeros((n3,1))
+modelres2=np.zeros((n3,1))
+modelres3=np.zeros((n3,1))
+
+for i in range(n3):
+    final_true=final1[i,:,:]-true1
+    modelres1[i]=math.sqrt(np.sum(final_true*final_true))
+    final_true=final2[i,:,:]-true2
+    modelres2[i]=math.sqrt(np.sum(final_true*final_true))
+    final_true=final3[i,:,:]-true3
+    modelres3[i]=math.sqrt(np.sum(final_true*final_true))
+
+modelres1=modelres1/modelres1[0]*100.
+modelres2=modelres2/modelres2[0]*100.
+modelres3=modelres3/modelres3[0]*100.
+
+plt.figure()
+plt.plot(modelres1)
+plt.title('parameter 1')
+#write('modelres1',modelres1)
+#to_header('modelres1','n1',n3,'o1',0,'d1',1)
+
+plt.figure()
+plt.plot(modelres2)
+plt.title('parameter 2')
+#write('modelres2',modelres2)
+#to_header('modelres2','n1',n3,'o1',0,'d1',1)
+
+plt.figure()
+plt.plot(modelres3)
+plt.title('parameter 3')
+#write('modelres3',modelres3)
+#to_header('modelres3','n1',n3,'o1',0,'d1',1)
+
+modelresa=(modelres1+modelres2+modelres3)/3.
+plt.figure()
+plt.plot(modelresa)
+plt.title('all parameters')
+#write('totalmodelres',modelresa)
+#to_header('totalmodelres','n1',n3,'o1',0,'d1',1)
+
+#plt.xlim((0.01,1))
+#plt.ylim((0,1200))
+#plt.xlabel('')
+#plt.ylabel('Count')
+
+title=searchArgv('title')
+plt.title(title)
+plt.show()
+#figname=searchArgv("figname")
+#plt.savefig(figname,bbox_inches='tight')

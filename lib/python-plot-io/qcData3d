@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import numpy as np
+import matplotlib.pyplot as plt
+from seppyio import *
+
+nsou=from_header('souloc','n2')
+souloc=read('souloc',(nsou,5))
+ntrace=from_header('recloc','n2')
+recloc=read('recloc',(ntrace,4))
+
+nt,ot,dt=from_header('data','n1','o1','d1')
+
+datafile=searchArgv('data')
+binfile=searchFile(datafile,'in')
+binfile=binfile.rstrip('\n')
+binfile=binfile.strip('"')
+f=open(binfile,'rb')
+
+fm=searchFile(datafile,'data_format')
+fm=fm.rstrip('\n')
+fm=fm.strip('"')
+if fm=='native_float':
+    datatype='=f4'
+elif fm=='xdr_float':
+    datatype='>f4'
+
+temp=searchArgv("shotid")
+if temp!=False:
+    curr_pos=int(temp)
+else:
+    curr_pos = 0
+
+
+def key_event(e):
+    global curr_pos
+
+    if e.key == "right":
+        curr_pos = curr_pos + 1
+    elif e.key == "left":
+        curr_pos = curr_pos - 1
+    else:
+        curr_pos=curr_pos+1
+    curr_pos = curr_pos % nsou
+
+    ax.cla()
+
+    nrec=int(souloc[curr_pos,3])
+    start=int(souloc[curr_pos,4])
+    pos=long(4*long(start)*long(nt))
+    f.seek(pos)
+    data=np.transpose(np.reshape(np.fromfile(f,dtype=datatype,count=nrec*nt),(nrec,nt)))
+    ax.imshow(data,interpolation='none',aspect='auto',extent=[1,1+(nrec-1)*1,ot+(nt-1)*dt,ot],vmin=minval,vmax=maxval,cmap=colormap)
+    ax.set_xlabel('trace number',fontsize=sz)
+    ax.set_ylabel('t',fontsize=sz)
+    ax.set_title(str(curr_pos),fontsize=sz)
+    
+    fig.canvas.draw()
+
+fig,ax = plt.subplots(1,1)
+fig.canvas.mpl_connect('key_press_event', key_event)
+
+temp=searchArgv('colormap')
+if temp==False: 
+    colormap='gray' 
+else:
+    colormap=temp
+    
+temp=searchArgv('fontsize')
+if temp==False:
+    sz=15
+else:
+    sz=float(temp)
+ax.tick_params(labelsize=sz,pad=0.5*sz)
+
+temp=searchArgv('xlabel')
+if temp==False: 
+    xlabel=' ' 
+else:
+    xlabel=temp
+
+temp=searchArgv('ylabel')
+if temp==False: 
+    ylabel=' ' 
+else:
+    ylabel=temp
+
+nrec=int(souloc[curr_pos,3])
+start=int(souloc[curr_pos,4])
+
+pos=long(4*long(start)*long(nt))
+f.seek(pos)
+data=np.transpose(np.reshape(np.fromfile(f,dtype=datatype,count=nrec*nt),(nrec,nt)))
+
+temp=searchArgv('maxval')
+if temp==False: 
+    maxval=np.max(data) 
+else:
+    maxval=float(temp)
+
+temp=searchArgv('minval')
+if temp==False: 
+    minval=np.min(data) 
+else:
+    minval=float(temp)
+
+ax.imshow(data,interpolation='none',aspect='auto',extent=[1,1+(nrec-1)*1,ot+(nt-1)*dt,ot],vmin=minval,vmax=maxval,cmap=colormap)
+ax.set_xlabel('trace number',fontsize=sz)
+ax.set_ylabel('t',fontsize=sz)
+ax.set_title(str(curr_pos),fontsize=sz)
+
+plt.show()

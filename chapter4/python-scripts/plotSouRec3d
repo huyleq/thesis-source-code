@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+import numpy as np
+import matplotlib
+import matplotlib.pyplot as plt
+from seppyio import *
+
+matplotlib.rcParams.update({'font.size': 15})
+
+shiftx=650
+shifty=-20
+
+nsou=from_header('souloc','n2')
+souloc=read('souloc',(nsou,5))
+ntrace=from_header('recloc','n2')
+nreclocdim=from_header('recloc','n1')
+recloc=read('recloc',(ntrace,nreclocdim))
+
+souloc[:,0]=souloc[:,0]*1e-3-shiftx
+souloc[:,1]=souloc[:,1]*1e-3-shifty
+recloc[:,0]=recloc[:,0]*1e-3-shiftx
+recloc[:,1]=recloc[:,1]*1e-3-shifty
+
+fig,ax = plt.subplots(1,1)
+
+temp=searchArgv('xlabel')
+if temp==False: 
+    xlabel='' 
+else:
+    xlabel=temp
+
+temp=searchArgv('ylabel')
+if temp==False: 
+    ylabel='' 
+else:
+    ylabel=temp
+
+temp=searchArgv('title')
+if temp==False: 
+    title=''
+else:
+    title=temp
+
+temp=searchArgv('time_shift')
+if temp==False:
+    ax.scatter(recloc[:,0],recloc[::,1])
+else:
+    time_shift=read('time_shift',(ntrace,1))
+    b=-0.5
+    e=0.5
+    be=0.5*(b+e)
+    sc=ax.scatter(recloc[:,0],recloc[::,1],c=time_shift[:,0],cmap='jet',vmin=b,vmax=e)
+    cbar=plt.colorbar(sc,ticks=[b,0.5*(b+be),be,0.5*(be+e),e])
+    temp=searchArgv('barlabel')
+    if temp!=False:
+        cbar.set_label(temp)
+
+ax.scatter(souloc[:,0],souloc[:,1],s=200,marker='*',c='r',edgecolors='r')
+
+ax.set_xlabel(xlabel)
+ax.set_ylabel(ylabel)
+ax.set_title(title)
+
+temp=searchArgv('out')
+if temp==False: 
+    plt.show()
+else:
+    plt.savefig(temp,bbox_inches='tight')

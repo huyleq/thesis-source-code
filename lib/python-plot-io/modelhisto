@@ -1,0 +1,59 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+import matplotlib
+#matplotlib.use('agg')
+import matplotlib.pyplot as plt
+
+plt.rcParams['font.size'] = 15
+
+n1,o1,d1=from_header('initial','n1','o1','d1')
+n2,o2,d2=from_header('initial','n2','o2','d2')
+n1=int(n1)
+n2=int(n2)
+
+initial=read('initial',(n2,n1))
+final=read('final',(n2,n1))
+true=read('true',(n2,n1))
+
+minz=get_param("minz")
+bz=int((minz-o2)/d2)
+ez=n2
+
+initial_true=initial[bz:ez,:]-true[bz:ez,:]
+final_true=final[bz:ez,:]-true[bz:ez,:]
+
+initial_true_flat=initial_true.flatten()
+final_true_flat=final_true.flatten()
+
+#initial_true_mean=np.mean(initial_true_flat)
+#initial_true_median=np.median(initial_true_flat)
+#
+#final_true_mean=np.mean(final_true_flat)
+#final_true_median=np.median(final_true_flat)
+
+matplotlib.rcParams.update({'font.size': 15})
+plt.figure()
+dv=get_param('dv')
+nbin=int((np.amax(final_true)-np.amin(final_true))/dv)
+plt.hist(final_true_flat,nbin,color='magenta',label='final')
+nbin=int((np.amax(initial_true)-np.amin(initial_true))/dv)
+plt.hist(initial_true_flat,nbin,color='blue',alpha=0.4,label='initial')
+plt.legend()
+plt.xlim((-1000,1000))
+plt.ylim((0,80000))
+plt.xlabel('velocity error (m/s)')
+#plt.ylabel('Count')
+#title=title+'\ninitial: mean '+str(initial_true_mean)+' median '+str(initial_true_median)
+#title=title+'\nfinal: mean '+str(final_true_mean)+' median '+str(final_true_median)
+
+#plt.figure()
+#plt.hist([initial_true_flat,final_true_flat],100,color=['r','b'],label=['initial','final'])
+#plt.xlim((-1000,1000))
+#plt.ylim((0,80000))
+#plt.title(title)
+
+#plt.show()
+figname=searchArgv("figname")
+plt.savefig(figname,bbox_inches='tight')

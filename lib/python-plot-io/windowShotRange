@@ -1,0 +1,54 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+
+nsou=from_header('souloc','n2')
+souloc=read('souloc',(nsou,5))
+
+shotrange=get_array("shotrange");
+start=int(shotrange[0])
+end=int(shotrange[1])
+print "windowing from shot",start,"to",end
+
+ntrace=from_header('recloc','n2')
+nreclocdim=from_header('recloc','n1')
+recloc=read('recloc',(ntrace,nreclocdim))
+
+nt,ot,dt=from_header('data','n1','o1','d1')
+
+datafile=searchArgv('data')
+binfile=searchFile(datafile,'in')
+binfile=binfile.rstrip('\n')
+binfile=binfile.strip('"')
+f=open(binfile,'rb')
+
+fm=searchFile(datafile,'data_format')
+fm=fm.rstrip('\n')
+fm=fm.strip('"')
+if fm=='native_float':
+    datatype='=f4'
+elif fm=='xdr_float':
+    datatype='>f4'
+
+souloc1=np.copy(souloc[start:end,:])
+souloc1[:,4]=souloc1[:,4]-souloc1[0,4]
+write("soulocout",souloc1)
+to_header("soulocout","n1",5,"o1",0,"d1",1)
+to_header("soulocout","n2",end-start,"o2",0,"d2",1)
+
+ntrace1=int(souloc1[end-start-1,3]+souloc1[end-start-1,4])
+
+b=int(souloc[start,4])
+print "ntrace out",ntrace1,"starting from",b
+recloc1=recloc[b:b+ntrace1,:]
+write("reclocout",recloc1)
+to_header("reclocout","n1",nreclocdim,"o1",0,"d1",1)
+to_header("reclocout","n2",ntrace1,"o2",0,"d2",1)
+
+pos=long(4*long(b)*long(nt))
+f.seek(pos)
+data=np.fromfile(f,dtype=datatype,count=ntrace1*nt)
+write("dataout",data)
+to_header("dataout","n1",nt,"o1",ot,"d1",dt)
+to_header("dataout","n2",ntrace1,"o2",0,"d2",1)

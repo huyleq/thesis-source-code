@@ -1,0 +1,2 @@
+libraries are in lib/
+in all other directories there is a "exe" target to make all executables and a Makefile

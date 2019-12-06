@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+
+import matplotlib
+#matplotlib.use('TkAgg')
+import numpy as np
+import matplotlib.pyplot as plt
+from seppyio import * 
+
+matplotlib.rcParams.update({'font.size':15})
+matplotlib.rcParams['lines.linewidth'] = 2
+
+def getObjFuncFrom1Log(filename):
+    init_obj=getFirstFromFile(filename,'f')
+    print 'initial obj function',init_obj
+    it=[0]
+    getAllFromFile(filename,'ITER',it)
+    nfun=[0]
+    getAllFromFile(filename,'NFUN',nfun)
+    obj=[init_obj]
+    getAllFromFile(filename,'F',obj)
+    if len(it)!=len(nfun) or len(it)!=len(obj) or len(nfun)!=len(obj):
+        print 'lists lengths are not equal'
+    for i in range(len(obj)):
+        obj[i]=float(obj[i])/float(init_obj)
+    return it,nfun,obj
+
+filenames=get_sarray('logfile')
+labels=get_sarray('label')
+its=[]
+nfuns=[]
+objs=[]
+fig1,ax1=plt.subplots()
+fig2,ax2=plt.subplots()
+for i in range(len(filenames)):
+    filename=filenames[i]
+    it,nfun,obj=getObjFuncFrom1Log(filename)
+    its.append(it)
+    nfuns.append(nfun)
+    objs.append(obj)
+    ax1.plot(it,obj,marker='o',label=labels[i])
+    ax2.plot(nfun,obj,marker='o',label=labels[i])
+ax1.set_yscale('log')
+ax1.set_xlabel('iteration')
+ax1.set_ylabel('objective function')
+ax1.legend()
+ax2.set_yscale('log')
+ax2.set_xlabel('number of function evaluation')
+ax2.set_ylabel('objective function')
+ax2.legend()
+plt.show()
+fig1.savefig('objiter.pdf',bbox_inches='tight')
+fig2.savefig('objnfev.pdf',bbox_inches='tight')
+

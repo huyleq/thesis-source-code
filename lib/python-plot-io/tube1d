@@ -1,0 +1,197 @@
+#!/usr/bin/env python
+
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import cm
+from seppyio import *
+
+filename=searchArgv('hfile') 
+
+n1,o1,d1=from_header('hfile','n1','o1','d1')
+n1=int(n1)
+temp=from_header('hfile','n2')
+if temp==False:
+    n2=1
+else:
+    n2=int(temp)
+n3=int(from_header('hfile','n3'))
+
+a=read('hfile',(n3,n2,n1))
+
+temp=searchArgv('maxx')
+if temp==False: 
+    maxx=o1+(n1-1)*d1 
+else:
+    maxx=float(temp)
+
+temp=searchArgv('minx')
+if temp==False: 
+    minx=o1
+else:
+    minx=float(temp)
+
+temp=searchArgv('maxy')
+if temp==False: 
+    maxy=np.max(a) 
+    eclip=1.05
+else:
+    maxy=float(temp)
+    eclip=1.
+
+temp=searchArgv('miny')
+if temp==False: 
+    miny=np.min(a) 
+    bclip=0.95
+else:
+    miny=float(temp)
+    bclip=1.
+
+width=[]
+temp=searchArgv('width')
+if temp==False: 
+    for i in range(n2):
+        width.append(2.5)
+else:
+    temp=temp.split(',')
+    for i in range(n2):
+        width.append(float(temp[i]))
+
+style=[]
+temp=searchArgv('style')
+if temp==False: 
+    for i in range(n2):
+        style.append('-')
+else:
+    style=temp.split(',')
+
+labels=[]
+temp=searchArgv('label')
+if temp==False: 
+    for i in range(n2):
+        labels.append(' ')
+else:
+    labels=temp.split(',')
+
+colors=['black','blue','green','red','cyan','magenta','crimson','gold','grey','navy','purple','lime']
+
+x=np.linspace(o1,o1+(n1-1)*d1,n1)
+
+transp=searchArgv('transp')
+if transp=='y':
+    xa=minx
+    minx=miny
+    miny=xa
+    xa=maxx
+    maxx=maxy
+    maxy=xa
+
+curr_pos = 0
+
+def key_event(e):
+    global curr_pos
+
+    if e.key == "right":
+        curr_pos = curr_pos + 1
+    elif e.key == "left":
+        curr_pos = curr_pos - 1
+    else:
+        return
+    curr_pos = curr_pos % n3
+
+    ax.cla()
+    if transp=='y':
+        for i in range(n2):
+            plt.plot(a[curr_pos,i,:],x,color=colors[i%len(colors)],linewidth=width[i],linestyle=style[i],label=labels[i])
+    else:
+        for i in range(n2):
+            plt.plot(x,a[curr_pos,i,:],color=colors[i%len(colors)],linewidth=width[i],linestyle=style[i],label=labels[i])
+    ax.set_xlabel(xlabel,fontsize=sz)
+    ax.set_ylabel(ylabel,fontsize=sz)
+    ax.set_title(str(curr_pos),fontsize=sz)
+    if transp==False:
+        plt.xlim((minx,maxx))
+        plt.ylim((bclip*miny,eclip*maxy))
+        avev=0.5*(miny+maxy)
+        ax.set_yticks([miny,0.5*(miny+avev),avev,0.5*(avev+maxy),maxy])
+    else:
+        plt.ylim((miny,maxy))
+        plt.xlim((bclip*minx,eclip*maxx))
+        avev=0.5*(minx+maxx)
+        ax.set_xticks([minx,0.5*(minx+avev),avev,0.5*(avev+maxx),maxx])
+    ax.set_aspect(ar)
+    if searchArgv('yreverse')=='y':
+        plt.gca().invert_yaxis()
+    plt.legend(loc=l)
+    fig.canvas.draw()
+
+fig, ax = plt.subplots()
+fig.canvas.mpl_connect('key_press_event', key_event)
+if transp=='y':
+    for i in range(n2):
+        plt.plot(a[0,i,:],x,color=colors[i%len(colors)],linewidth=width[i],linestyle=style[i],label=labels[i])
+else:
+    for i in range(n2):
+        print a[0,i,:].shape
+        plt.plot(x,a[0,i,:],color=colors[i%len(colors)],linewidth=width[i],linestyle=style[i],label=labels[i])
+
+if transp==False:
+    plt.xlim((minx,maxx))
+    plt.ylim((bclip*miny,eclip*maxy))
+    avev=0.5*(miny+maxy)
+    ax.set_yticks([miny,0.5*(miny+avev),avev,0.5*(avev+maxy),maxy])
+else:
+    plt.ylim((miny,maxy))
+    plt.xlim((bclip*minx,eclip*maxx))
+    avev=0.5*(minx+maxx)
+    ax.set_xticks([minx,0.5*(minx+avev),avev,0.5*(avev+maxx),maxx])
+
+temp=searchArgv('aspect')
+if temp==False:
+    ar='auto'
+else:
+    ar=float(temp)
+ax.set_aspect(ar)
+
+temp=searchArgv('legend')
+if temp=='y':
+    temp1=searchArgv('legendloc')
+    if temp1!=False:
+        if temp1=='ur':
+            l=1
+        elif temp1=='ul':
+            l=2
+        elif temp1=='ll':
+            l=3
+        elif temp1=='lr':
+            l=4
+        else:
+            l=0
+    else:
+        l=0
+    plt.legend(loc=l)
+
+temp=searchArgv('yreverse')
+if temp=='y':
+    plt.gca().invert_yaxis()
+
+temp=searchArgv('fontsize')
+if temp==False:
+    sz=15
+else:
+    sz=float(temp)
+
+ax.tick_params(labelsize=sz,pad=0.5*sz)
+
+temp=searchArgv('xlabel')
+if temp==False: 
+    xlabel=' ' 
+else:
+    xlabel=temp
+
+temp=searchArgv('ylabel')
+if temp==False: 
+    ylabel=' ' 
+else:
+    ylabel=temp
+
+plt.show()

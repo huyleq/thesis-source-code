@@ -1,0 +1,61 @@
+#!/usr/bin/env python
+
+import matplotlib
+#matplotlib.use('TkAgg')
+import numpy as np
+import matplotlib.pyplot as plt
+from seppyio import * 
+import math
+
+matplotlib.rcParams.update({'font.size':15})
+matplotlib.rcParams['lines.linewidth'] = 2
+
+def plotIllum(souloc,recloc,x,z):
+    ns=souloc.shape[0]
+    kmx=[]
+    kmz=[]
+    for i in range(ns):
+        sx=souloc[i,0]
+        sz=souloc[i,1]
+        nr=int(souloc[i,2])
+        start=int(souloc[i,3])
+        for j in range(nr):
+            rx=recloc[start+j,0]
+            rz=recloc[start+j,1]
+            ksx=x-sx
+            ksz=z-sz
+            ks=math.sqrt(ksx*ksx+ksz*ksz)
+            cosa=ksz/ks
+            sina=ksx/ks
+            krx=rx-x
+            krz=rz-z
+            kr=math.sqrt(krx*krx+krz*krz)
+            cosb=krz/kr
+            sinb=krx/kr
+            kmx.append(sina-sinb)
+            kmx.append(sinb-sina)
+            kmz.append(cosb-cosa)
+            kmz.append(cosa-cosb)
+    plt.scatter(kmx,kmz)
+    plt.show()
+
+ns,os,ds=get_param('ns','os','ds')
+nr,orr,dr=get_param('nr','or','dr')
+zs,zr=get_param('zs','zr')
+x,z=get_param('x','z')
+
+souloc=np.zeros((ns,4))
+recloc=np.zeros((ns*nr,2))
+for i in range(ns):
+    souloc[i,0]=os+i*ds
+    souloc[i,1]=zs
+    souloc[i,2]=nr
+    souloc[i,3]=i*nr
+    for j in range(nr):
+        recloc[i*nr+j,0]=orr+j*dr
+        recloc[i*nr+j,1]=zr
+
+plotIllum(souloc,recloc,x,z)
+
+
+

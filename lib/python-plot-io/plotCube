@@ -1,0 +1,245 @@
+#!/usr/bin/env python
+
+import numpy as np
+from seppyio import *
+import matplotlib
+import matplotlib.pyplot as plt
+from matplotlib.patches import FancyBboxPatch 
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+matplotlib.rcParams.update({'font.size':15})
+matplotlib.rcParams.update({'lines.linewidth':0.5})
+
+# hfile is in xyz order
+n1,n2,n3=from_header("hfile","n1","n2","n3")
+
+if searchArgv("o1")==False:
+    o1=from_header("hfile","o1")
+else: 
+    o1=get_param("o1")
+
+if searchArgv("o2")==False:
+    o2=from_header("hfile","o2")
+else: 
+    o2=get_param("o2")
+
+if searchArgv("o3")==False:
+    o3=from_header("hfile","o3")
+else: 
+    o3=get_param("o3")
+
+if searchArgv("d1")==False:
+    d1=from_header("hfile","d1")
+else: 
+    d1=get_param("d1")
+
+if searchArgv("d2")==False:
+    d2=from_header("hfile","d2")
+else: 
+    d2=get_param("d2")
+
+if searchArgv("d3")==False:
+    d3=from_header("hfile","d3")
+else: 
+    d3=get_param("d3")
+
+temp=searchArgv('xlabel')
+if temp!=False:
+    xlabel=temp
+else:
+    xlabel='x1'
+
+temp=searchArgv('ylabel')
+if temp!=False:
+    ylabel=temp
+else:
+    ylabel='x2'
+
+temp=searchArgv('zlabel')
+if temp!=False:
+    zlabel=temp
+else:
+    zlabel='x3'
+
+a=read("hfile",(n3,n2,n1))
+
+min1=searchArgv('min1')
+if min1!=False:
+    min1=float(min1)
+    b1=int((min1-o1)/d1)
+else:
+    b1=0
+
+max1=searchArgv('max1')
+if max1!=False:
+    max1=float(max1)
+    e1=int((max1-o1)/d1)
+    o1=min1
+else:
+    e1=n1
+n1=e1-b1
+
+min2=searchArgv('min2')
+if min2!=False:
+    min2=float(min2)
+    b2=int((min2-o2)/d2)
+else:
+    b2=0
+
+max2=searchArgv('max2')
+if max2!=False:
+    max2=float(max2)
+    e2=int((max2-o2)/d2)
+    o2=min2
+else:
+    e2=n2
+n2=e2-b2
+
+min3=searchArgv('min3')
+if min3!=False:
+    min3=float(min3)
+    b3=int((min3-o3)/d3)
+else:
+    b3=0
+
+max3=searchArgv('max3')
+if max3!=False:
+    max3=float(max3)
+    e3=int((max3-o3)/d3)
+    o3=min3
+else:
+    e3=n3
+n3=e3-b3
+
+a=a[b3:e3,b2:e2,b1:e1]
+
+
+temp=searchArgv('scalefactor')
+if temp!=False:
+    temp=float(temp)
+    a=a*temp
+
+temp=searchArgv('maxval')
+if temp==False: 
+    maxval=np.max(a) 
+else:
+    maxval=float(temp)
+
+temp=searchArgv('minval')
+if temp==False: 
+    minval=np.min(a) 
+else:
+    minval=float(temp)
+
+temp=get_param('width1')
+if temp!=False:
+    width1=temp
+else:
+    width1=4.
+
+temp=get_param('width2')
+if temp!=False:
+    width2=temp
+else:
+    width2=4.
+
+temp=get_param('width3')
+if temp!=False:
+    width3=temp
+else:
+    width3=4.
+
+temp=searchArgv('colormap')
+if temp==False: 
+    colormap='gray' 
+else:
+    colormap=temp
+
+loc1=get_param('loc1')
+if loc1!=False:
+    i1=int((loc1-o1)/d1)
+else:
+    i1=n1/2
+    loc1=i1*d1+o1
+
+loc2=get_param('loc2')
+if loc2!=False:
+    i2=int((loc2-o2)/d2)
+else:
+    i2=n2/2
+    loc2=i2*d2+o2
+
+loc3=get_param('loc3')
+if loc3!=False:
+    i3=int((loc3-o3)/d3)
+else:
+    i3=n3/2
+    loc3=i3*d3+o3
+
+x1=np.linspace(o1,o1+d1*n1,n1+1)
+x2=np.linspace(o2,o2+d2*n2,n2+1)
+x3=np.linspace(o3,o3+d3*n3,n3+1)
+
+widths=[width1,width3]
+heights=[width3,width2]
+gs_kw=dict(width_ratios=widths,height_ratios=heights)
+f,ax=plt.subplots(2,2,figsize=(width1+width3,width2+width3),gridspec_kw=gs_kw)
+plt.subplots_adjust(wspace=0,hspace=0)
+
+# xz plane
+ax[1,0].imshow(a[:,i2,:],interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o3+d3*n3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+ax[1,0].plot(loc1*np.ones((n3+1,)),x3,c='k')
+ax[1,0].plot(x1,loc3*np.ones((n1+1,)),c='k')
+ax[1,0].set_xlabel(xlabel)
+ax[1,0].set_ylabel(zlabel)
+
+# yz plane
+im=ax[1,1].imshow(a[:,:,i1],interpolation='none',aspect='auto',extent=[o2,o2+n2*d2,o3+n3*d3,o3],vmin=minval,vmax=maxval,cmap=colormap)
+ax[1,1].plot(loc2*np.ones((n3+1,)),x3,c='k')
+ax[1,1].plot(x2,loc3*np.ones((n2+1,)),c='k')
+ax[1,1].get_yaxis().set_visible(False)
+ax[1,1].set_xlabel(ylabel)
+xticks=ax[1,1].xaxis.get_major_ticks()
+xticks[0].set_visible(False)
+ax1=ax[1,1].twinx()
+ax1.set_ylim(ax[1,1].get_ylim())
+ax1.set_yticks([loc3])
+ax1.set_yticklabels([str(loc3)],rotation='vertical',va='center')
+ax2=ax[1,1].twiny()
+ax2.set_xlim(ax[1,1].get_xlim())
+ax2.set_xticks([loc2])
+ax2.set_xticklabels([str(loc2)])
+
+# xy plane
+ax[0,0].imshow(np.flip(a[i3,:,:],0),interpolation='none',aspect='auto',extent=[o1,o1+n1*d1,o2,o2+n2*d2],vmin=minval,vmax=maxval,cmap=colormap)
+ax[0,0].plot(loc1*np.ones((n2+1,)),x2,c='k')
+ax[0,0].plot(x1,loc2*np.ones((n1+1,)),c='k')
+ax[0,0].set_ylabel(ylabel)
+ax[0,0].get_xaxis().set_visible(False)
+ax1=ax[0,0].twinx()
+ax1.set_ylim(ax[0,0].get_ylim())
+ax1.set_yticks([loc2])
+ax1.set_yticklabels([str(loc2)],rotation='vertical',va='center')
+ax2=ax[0,0].twiny()
+ax2.set_xlim(ax[0,0].get_xlim())
+ax2.set_xticks([loc1])
+ax2.set_xticklabels([str(loc1)])
+
+ave=0.5*(minval+maxval)
+temp=searchArgv('wantbar')
+if temp=='y':
+    f.subplots_adjust(right=0.8)
+    cbar_ax = f.add_axes([0.85, 0.15, 0.05, 0.7])
+    cbar=f.colorbar(im,cax=cbar_ax,ticks=[minval,0.5*(minval+ave),ave,0.5*(ave+maxval),maxval])
+temp=searchArgv('barlabel')
+if temp!=False:
+    cbar.ax.set_ylabel(temp)
+
+ax[0,1].axis('off')
+
+temp=searchArgv('out')
+if temp==False: 
+    plt.show()
+else:
+    plt.savefig(temp,bbox_inches='tight')
+

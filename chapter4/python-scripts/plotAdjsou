@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+
+import numpy as np
+import matplotlib.pyplot as plt
+from seppyio import *
+
+nt,ot,dt=from_header('data','n1','o1','d1')
+data=read('data',(nt,1))
+data0=read('data0',(nt,1))
+m=from_header('adjsou','n2')
+adjsou=read('adjsou',(m,nt))
+
+fig,ax=plt.subplots(1,2,figsize=(10,10),sharey=True)
+plt.subplots_adjust(wspace=0,hspace=0)
+
+sz=15
+ax[0].tick_params(labelsize=sz,pad=0.5*sz)
+ax[1].tick_params(labelsize=sz,pad=0.5*sz)
+
+t=np.linspace(0,ot+dt*(nt-1),nt)
+ax[0].plot(data,t,label='modeled data',linewidth=1.5)
+ax[0].plot(data0,t,label='observed data',linewidth=1.5)
+ax[0].set_xlabel('amplitude',fontsize=sz)
+ax[0].set_ylabel('t (s)',fontsize=sz)
+ax[0].legend(prop={'size':sz})
+
+ax[1].plot(adjsou[0,:],t,label='analytic')
+delta=1.
+for i in range(1,m):
+    ax[1].plot(adjsou[i,:],t,label=r'd_i='+str(delta))
+    delta=delta/2
+ax[1].set_xlabel('amplitude',fontsize=sz)
+ax[1].legend(prop={'size':sz})
+plt.gca().invert_yaxis()
+
+temp=searchArgv('out')
+if temp==False: 
+    plt.show()
+else:
+    plt.savefig(temp,bbox_inches='tight')
+

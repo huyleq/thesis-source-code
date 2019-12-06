@@ -1,0 +1,17 @@
+functions.cpp and functions.h have the test functions.
+
+lbfgs_c.cpp and lbfgs_f.f have the LBFGS solvers in cpp and f90. lbfgs.h is the header file.
+
+nlcg.cpp is nonlinear conjugate gradient
+
+newton.cpp is newton
+
+steepest.cpp is steepest descent
+
+la.cpp has the linear algebra routines.
+
+lsearch.cpp has the line search routines.
+
+test1c.cpp and test1f.cpp are two sample main programs.
+
+See makefile for compilation and run.sh for sample run command
